@@ -1,28 +1,45 @@
+const notesData = require("../db/db.json");
 const fs = require("fs");
-var notesdata = require("../db/db.json");
+
 module.exports = function(app) {
     app.get("/api/notes", function(req, res) {
-       return res.json(notesdata);
-      });
-    app.post("/api/notes", function(req,res){
-        let newNote = req.body;
-        console.log(newNote);
-        notesdata.push(newNote);
-        console.log(notesdata);
-        addId();
-        let save = JSON.stringify(notesdata);
-        fs.writeFileSync("./db/db.json",save)
-        res.redirect('back');
+        return res.json(notesData);
     });
-    app.delete("/api/notes/:id", function (req,res) {
-        console.log(req.params.id);
-        notesdata.splice((req.params.id -1),1);
-        fs.writeFileSync("./db/db.json",save);
-        res.redirect('back');
+
+    app.post("/api/notes", function(req, res) {
+        const note = req.body;
+        if (notesData.length == 0) {
+            note.id = 1
+        } else {
+            note.id = notesData[notesData.length - 1].id + 1
+        }
+        notesData.push(note);
+        console.log(notesData);
+
+        // res.json(true);
+
+        fs.writeFile("/db/db.json", JSON.stringify(notesData), (results, err) => {
+            if (err) console.log(err)
+            res.json(results)
+        })
     });
-    function addId() {
-        notesdata.forEach((element,i) => {
-            element.id = i+1;
-        });
-    }
+
+    app.delete("/api/notes/:id", (req, res) => {
+        const deleted = notesData.findIndex((i) => i.id == req.params.id);
+        notesData.splice(deleted, 1);
+        reWrite();
+        res.json(notesData);
+    })
+    
+let reWrite = () => {
+    let newData = JSON.stringify(notesData);
+    fs.writeFile("db/db.json", newData, err => { 
+        if (err) throw err
+    });
+}
+    // app.post("/api/clear", function(req, res) {
+    //     notesData.length = 0;
+
+    //     res.json({ ok: true});
+    // });
 };
